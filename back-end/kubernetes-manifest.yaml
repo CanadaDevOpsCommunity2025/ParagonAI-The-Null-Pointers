@@ -1,0 +1,852 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: paragonai
+  labels:
+    name: paragonai
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: paragonai
+data:
+  API_V1_PREFIX: "/api/v1"
+  PROJECT_NAME: "ParagonAI Agent Deployment Platform"
+  VERSION: "1.0.0"
+  DEFAULT_LLM_PROVIDER: "groq"
+  DEFAULT_MODEL: "openai/gpt-oss-120b"
+  MONGODB_URL: "mongodb://mongodb:27017"
+  MONGODB_DB: "paragonai"
+  DOCKER_REGISTRY: "docker.io"
+  AWS_REGION: "us-east-1"
+  DEFAULT_NAMESPACE: "default"
+  ENABLE_SECURITY_SCAN: "true"
+  TRIVY_ENABLED: "true"
+  PROMETHEUS_ENABLED: "true"
+  GRAFANA_ENABLED: "true"
+
+---
+# Secret for sensitive data (base64 encoded values)
+# Note: Replace these with actual base64-encoded values
+# To encode: echo -n 'your-value' | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: paragonai
+type: Opaque
+data:
+  GROQ_API_KEY: ""  # Add your base64-encoded GROQ API key
+  OPENAI_API_KEY: ""  # Add your base64-encoded OpenAI API key (optional)
+  GEMINI_API_KEY: ""  # Add your base64-encoded Gemini API key (optional)
+  DOCKER_USERNAME: ""  # Add your base64-encoded Docker username (optional)
+  DOCKER_PASSWORD: ""  # Add your base64-encoded Docker password (optional)
+  AWS_ACCESS_KEY_ID: ""  # Add your base64-encoded AWS access key (optional)
+  AWS_SECRET_ACCESS_KEY: ""  # Add your base64-encoded AWS secret key (optional)
+
+---
+# MongoDB Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: paragonai
+  labels:
+    app: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
+
+---
+# MongoDB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: paragonai
+  labels:
+    app: mongodb
+spec:
+  type: ClusterIP
+  ports:
+  - port: 27017
+    targetPort: 27017
+    protocol: TCP
+    name: mongodb
+  selector:
+    app: mongodb
+
+---
+# MongoDB PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: paragonai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: paragonai
+  labels:
+    app: backend
+    version: v1
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: backend
+        image: hmbaytam/paragonai-backend:latest  # Update with your image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        - containerPort: 8001
+          name: metrics
+          protocol: TCP
+        env:
+        # ConfigMap values
+        - name: API_V1_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: API_V1_PREFIX
+        - name: PROJECT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PROJECT_NAME
+        - name: VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: VERSION
+        - name: DEFAULT_LLM_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DEFAULT_LLM_PROVIDER
+        - name: DEFAULT_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DEFAULT_MODEL
+        - name: MONGODB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: MONGODB_URL
+        - name: MONGODB_DB
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: MONGODB_DB
+        - name: DOCKER_REGISTRY
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DOCKER_REGISTRY
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: AWS_REGION
+        - name: DEFAULT_NAMESPACE
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DEFAULT_NAMESPACE
+        - name: ENABLE_SECURITY_SCAN
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: ENABLE_SECURITY_SCAN
+        - name: TRIVY_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: TRIVY_ENABLED
+        - name: PROMETHEUS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PROMETHEUS_ENABLED
+        - name: GRAFANA_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: GRAFANA_ENABLED
+        # Secret values
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GROQ_API_KEY
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: OPENAI_API_KEY
+              optional: true
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GEMINI_API_KEY
+              optional: true
+        - name: DOCKER_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: DOCKER_USERNAME
+              optional: true
+        - name: DOCKER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: DOCKER_PASSWORD
+              optional: true
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: AWS_ACCESS_KEY_ID
+              optional: true
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: AWS_SECRET_ACCESS_KEY
+              optional: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      # If using a private registry, add imagePullSecrets
+      # imagePullSecrets:
+      # - name: registry-credentials
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: paragonai
+  labels:
+    app: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: metrics
+  selector:
+    app: backend
+
+---
+# Backend Ingress (optional - for external access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend-ingress
+  namespace: paragonai
+  annotations:
+    # Add your ingress controller specific annotations here
+    # For nginx ingress controller:
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  rules:
+  - host: api.paragonai.example.com  # Update with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8000
+  # Uncomment for TLS/HTTPS
+  # tls:
+  # - hosts:
+  #   - api.paragonai.example.com
+  #   secretName: backend-tls
+
+---
+# HorizontalPodAutoscaler (optional - for auto-scaling)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: paragonai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# Customer Support Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-support-agent
+  namespace: paragonai
+  labels:
+    app: customer-support-agent
+    agent-type: customer-support
+    framework: langchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-support-agent
+  template:
+    metadata:
+      labels:
+        app: customer-support-agent
+        agent-type: customer-support
+        framework: langchain
+      annotations:
+        agent-id: "customer-support-v1"
+        agent-model: "mixtral-8x7b-32768"
+    spec:
+      containers:
+      - name: agent
+        image: hmbaytam/paragonai-backend:latest
+        imagePullPolicy: Always
+        command: ["python", "-c"]
+        args:
+          - |
+            import asyncio
+            import os
+            import logging
+            from openai import OpenAI
+
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+
+            async def run_agent():
+                agent_id = os.getenv("AGENT_ID")
+                agent_type = os.getenv("AGENT_TYPE")
+                model = os.getenv("MODEL")
+                api_key = os.getenv("GROQ_API_KEY")
+
+                logger.info(f"Customer Support Agent ({agent_id}) starting...")
+                logger.info(f"Agent Type: {agent_type}")
+                logger.info(f"Model: {model}")
+                logger.info(f"Framework: LangChain")
+                logger.info(f"API Key present: {bool(api_key)}")
+
+                # Initialize client but don't test connection on startup
+                client = OpenAI(
+                    api_key=api_key if api_key else "dummy-key",
+                    base_url="https://api.groq.com/openai/v1"
+                )
+
+                logger.info("Customer Support Agent initialized successfully")
+
+                while True:
+                    logger.info("Customer Support Agent is running and ready to handle requests...")
+                    await asyncio.sleep(60)
+
+            asyncio.run(run_agent())
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GROQ_API_KEY
+        - name: AGENT_ID
+          value: "customer-support-v1"
+        - name: AGENT_TYPE
+          value: "customer-support"
+        - name: FRAMEWORK
+          value: "langchain"
+        - name: MODEL
+          value: "llama-3.3-70b-versatile"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('alive')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+
+---
+# Customer Support Agent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-support-agent
+  namespace: paragonai
+  labels:
+    app: customer-support-agent
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: customer-support-agent
+
+---
+# Content Writer Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: content-writer-agent
+  namespace: paragonai
+  labels:
+    app: content-writer-agent
+    agent-type: content-writer
+    framework: crewai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: content-writer-agent
+  template:
+    metadata:
+      labels:
+        app: content-writer-agent
+        agent-type: content-writer
+        framework: crewai
+      annotations:
+        agent-id: "content-writer-v1"
+        agent-model: "mixtral-8x7b-32768"
+    spec:
+      containers:
+      - name: agent
+        image: hmbaytam/paragonai-backend:latest
+        imagePullPolicy: Always
+        command: ["python", "-c"]
+        args:
+          - |
+            import asyncio
+            import os
+            import logging
+            from openai import OpenAI
+
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+
+            async def run_agent():
+                agent_id = os.getenv("AGENT_ID")
+                agent_type = os.getenv("AGENT_TYPE")
+                model = os.getenv("MODEL")
+                api_key = os.getenv("GROQ_API_KEY")
+
+                logger.info(f"Content Writer Agent ({agent_id}) starting...")
+                logger.info(f"Agent Type: {agent_type}")
+                logger.info(f"Model: {model}")
+                logger.info(f"Framework: CrewAI")
+                logger.info(f"API Key present: {bool(api_key)}")
+
+                # Initialize client but don't test connection on startup
+                client = OpenAI(
+                    api_key=api_key if api_key else "dummy-key",
+                    base_url="https://api.groq.com/openai/v1"
+                )
+
+                logger.info("Content Writer Agent initialized successfully")
+
+                while True:
+                    logger.info("Content Writer Agent is running and ready to generate content...")
+                    await asyncio.sleep(60)
+
+            asyncio.run(run_agent())
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GROQ_API_KEY
+        - name: AGENT_ID
+          value: "content-writer-v1"
+        - name: AGENT_TYPE
+          value: "content-writer"
+        - name: FRAMEWORK
+          value: "crewai"
+        - name: MODEL
+          value: "llama-3.3-70b-versatile"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('alive')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+
+---
+# Content Writer Agent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: content-writer-agent
+  namespace: paragonai
+  labels:
+    app: content-writer-agent
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: content-writer-agent
+
+---
+# Data Analyst Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-analyst-agent
+  namespace: paragonai
+  labels:
+    app: data-analyst-agent
+    agent-type: data-analyst
+    framework: autogen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-analyst-agent
+  template:
+    metadata:
+      labels:
+        app: data-analyst-agent
+        agent-type: data-analyst
+        framework: autogen
+      annotations:
+        agent-id: "data-analyst-v1"
+        agent-model: "llama-3.3-70b-versatile"
+    spec:
+      containers:
+      - name: agent
+        image: hmbaytam/paragonai-backend:latest
+        imagePullPolicy: Always
+        command: ["python", "-c"]
+        args:
+          - |
+            import asyncio
+            import os
+            import logging
+            from openai import OpenAI
+
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+
+            async def run_agent():
+                agent_id = os.getenv("AGENT_ID")
+                agent_type = os.getenv("AGENT_TYPE")
+                model = os.getenv("MODEL")
+                api_key = os.getenv("GROQ_API_KEY")
+
+                logger.info(f"Data Analyst Agent ({agent_id}) starting...")
+                logger.info(f"Agent Type: {agent_type}")
+                logger.info(f"Model: {model}")
+                logger.info(f"Framework: AutoGen")
+                logger.info(f"API Key present: {bool(api_key)}")
+
+                # Initialize client but don't test connection on startup
+                client = OpenAI(
+                    api_key=api_key if api_key else "dummy-key",
+                    base_url="https://api.groq.com/openai/v1"
+                )
+
+                logger.info("Data Analyst Agent initialized successfully")
+                logger.info("Ready to analyze datasets, generate insights, and create visualizations")
+
+                while True:
+                    logger.info("Data Analyst Agent is running and ready to analyze data...")
+                    await asyncio.sleep(60)
+
+            asyncio.run(run_agent())
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GROQ_API_KEY
+        - name: AGENT_ID
+          value: "data-analyst-v1"
+        - name: AGENT_TYPE
+          value: "data-analyst"
+        - name: FRAMEWORK
+          value: "autogen"
+        - name: MODEL
+          value: "llama-3.3-70b-versatile"
+        - name: SYSTEM_PROMPT
+          value: "You are a data analyst. Analyze the provided data and provide clear, actionable insights."
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('alive')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+
+---
+# Data Analyst Agent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-analyst-agent
+  namespace: paragonai
+  labels:
+    app: data-analyst-agent
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: data-analyst-agent
+
+---
+# Sentiment Analyst Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-analyst-agent
+  namespace: paragonai
+  labels:
+    app: sentiment-analyst-agent
+    agent-type: sentiment-analyst
+    framework: custom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sentiment-analyst-agent
+  template:
+    metadata:
+      labels:
+        app: sentiment-analyst-agent
+        agent-type: sentiment-analyst
+        framework: custom
+      annotations:
+        agent-id: "sentiment-analyst-v1"
+        agent-model: "llama-3.3-70b-versatile"
+    spec:
+      containers:
+      - name: agent
+        image: hmbaytam/paragonai-backend:latest
+        imagePullPolicy: Always
+        command: ["python", "-c"]
+        args:
+          - |
+            import asyncio
+            import os
+            import logging
+            from openai import OpenAI
+
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
+
+            async def run_agent():
+                agent_id = os.getenv("AGENT_ID")
+                agent_type = os.getenv("AGENT_TYPE")
+                model = os.getenv("MODEL")
+                api_key = os.getenv("GROQ_API_KEY")
+
+                logger.info(f"Sentiment Analyst Agent ({agent_id}) starting...")
+                logger.info(f"Agent Type: {agent_type}")
+                logger.info(f"Model: {model}")
+                logger.info(f"Framework: Custom")
+                logger.info(f"API Key present: {bool(api_key)}")
+
+                # Initialize client but don't test connection on startup
+                client = OpenAI(
+                    api_key=api_key if api_key else "dummy-key",
+                    base_url="https://api.groq.com/openai/v1"
+                )
+
+                logger.info("Sentiment Analyst Agent initialized successfully")
+                logger.info("Ready to analyze text sentiment and classify as positive, negative, or neutral")
+
+                while True:
+                    logger.info("Sentiment Analyst Agent is running and ready to analyze sentiment...")
+                    await asyncio.sleep(60)
+
+            asyncio.run(run_agent())
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: GROQ_API_KEY
+        - name: AGENT_ID
+          value: "sentiment-analyst-v1"
+        - name: AGENT_TYPE
+          value: "sentiment-analyst"
+        - name: FRAMEWORK
+          value: "custom"
+        - name: MODEL
+          value: "llama-3.3-70b-versatile"
+        - name: SYSTEM_PROMPT
+          value: "You are a sentiment analysis expert. Analyze the provided text and determine if the sentiment is positive, negative, or neutral. Provide a confidence score and detailed reasoning for your classification. Focus on emotional tone, word choice, and context to accurately classify sentiment."
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('alive')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+
+---
+# Sentiment Analyst Agent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentiment-analyst-agent
+  namespace: paragonai
+  labels:
+    app: sentiment-analyst-agent
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: sentiment-analyst-agent

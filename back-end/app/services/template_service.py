@@ -1,3 +1,78 @@
+from textwrap import dedent
+
+
+class TemplateService:
+    def render_dockerfile(self, ctx: dict) -> str:
+        return dedent(
+            f"""
+            FROM python:3.11-slim
+            WORKDIR /app
+            COPY requirements.txt .
+            RUN pip install --no-cache-dir -r requirements.txt
+            COPY . .
+            EXPOSE {ctx.get('port', 8000)}
+            CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "{ctx.get('port', 8000)}"]
+            """
+        ).strip()
+
+    def render_kubernetes_deployment(self, ctx: dict) -> str:
+        return dedent(
+            f"""
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: {ctx['app_name']}
+              namespace: {ctx['namespace']}
+              labels:
+                app: {ctx['app_name']}
+            spec:
+              replicas: {ctx.get('replicas', 1)}
+              selector:
+                matchLabels:
+                  app: {ctx['app_name']}
+              template:
+                metadata:
+                  labels:
+                    app: {ctx['app_name']}
+                spec:
+                  containers:
+                  - name: {ctx['app_name']}
+                    image: {ctx['image']}
+                    ports:
+                    - containerPort: {ctx.get('port', 8000)}
+            """
+        ).strip()
+
+    def render_kubernetes_service(self, ctx: dict) -> str:
+        return dedent(
+            f"""
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: {ctx['app_name']}-service
+              namespace: {ctx['namespace']}
+            spec:
+              selector:
+                app: {ctx['app_name']}
+              ports:
+              - protocol: TCP
+                port: 80
+                targetPort: {ctx.get('port', 8000)}
+              type: {ctx.get('service_type', 'LoadBalancer')}
+            """
+        ).strip()
+
+    def render_terraform_eks(self, ctx: dict) -> str:
+        return dedent(
+            f"""
+            // Placeholder Terraform for EKS
+            terraform {{ required_version = ">= 1.0.0" }}
+            """
+        ).strip()
+
+
+template_service = TemplateService()
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from typing import Dict, Any

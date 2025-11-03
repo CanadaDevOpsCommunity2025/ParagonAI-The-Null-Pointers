@@ -1,3 +1,15 @@
+class CICDService:
+    def generate_github_actions(self, ctx: dict) -> str:
+        return (
+            "name: Deploy\n"
+            "on:\n  push:\n    branches: [ main ]\n"
+            "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n"
+            "      - name: Build\n        run: echo 'Build placeholder'\n"
+        )
+
+
+cicd_service = CICDService()
+
 from pathlib import Path
 from typing import Dict, Any
 import logging

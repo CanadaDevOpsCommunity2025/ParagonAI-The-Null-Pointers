@@ -1,76 +1,62 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
-from app.routers import agents, deployments, generation
-from app.schemas import HealthResponse
-from datetime import datetime
+# main.py
+from fastapi import FastAPI, Request
+from app.routers.generation import router as generation_router
+from app.routers.deployments import router as deployments_router
+from app.routers.agents import router as agents_router
+from app.routers.metrics import router as metrics_router
+from app.services.mongodb_exporter import MongoDBExporter
+import threading
 import logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-logger = logging.getLogger(__name__)
-
-# Create FastAPI app
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    description="GenAI Agent Deployment Platform - Deploy AI agents at scale with a single prompt",
-    docs_url=f"{settings.API_V1_PREFIX}/docs",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include routers
-app.include_router(agents.router, prefix=settings.API_V1_PREFIX)
-app.include_router(deployments.router, prefix=settings.API_V1_PREFIX)
-app.include_router(generation.router, prefix=settings.API_V1_PREFIX)
-
+app = FastAPI()
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
-    return {
-        "message": "ParagonAI Agent Deployment Platform",
-        "version": settings.VERSION,
-        "docs": f"{settings.API_V1_PREFIX}/docs"
-    }
+    return {"message": "ParagonAI Agent Deployment Platform is running"}
 
+@app.get("/test")
+async def test():
+    return {"message": "Test endpoint is working!"}
 
-@app.get(f"{settings.API_V1_PREFIX}/health", response_model=HealthResponse)
-async def health_check():
-    """Health check endpoint"""
-    return HealthResponse(
-        status="healthy",
-        version=settings.VERSION,
-        timestamp=datetime.utcnow()
+# Middleware for logging requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger = logging.getLogger(__name__)
+    logger.info(f"Incoming request: {request.method} {request.url}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    
+    # Log request body for POST requests
+    if request.method == "POST":
+        body = await request.body()
+        try:
+            logger.info(f"Request body: {body.decode()}")
+        except:
+            logger.info("Could not decode request body")
+    
+    response = await call_next(request)
+    return response
+
+# Include routers
+app.include_router(generation_router)
+app.include_router(deployments_router)
+app.include_router(agents_router)
+app.include_router(metrics_router)
+
+# Start Prometheus metrics exporter in a separate thread
+def start_metrics_exporter():
+    from app.config import settings
+    exporter = MongoDBExporter(
+        mongo_uri=settings.MONGODB_URL,
+        db_name=f"{settings.MONGODB_DB}_metrics",
+        port=8001
     )
+    exporter.run()
 
+# Start the exporter in a separate thread
+threading.Thread(target=start_metrics_exporter, daemon=True).start()
 
 @app.on_event("startup")
 async def startup_event():
-    """Run on application startup"""
-    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
-    logger.info(f"API documentation available at {settings.API_V1_PREFIX}/docs")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on application shutdown"""
-    logger.info("Shutting down application")
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("Starting ParagonAI Agent Deployment Platform")

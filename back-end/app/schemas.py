@@ -44,6 +44,12 @@ class GenerateResponse(BaseModel):
     download_url: Optional[str] = None
 
 
+class AgentDefaultConfig(BaseModel):
+    model: str = "mixtral-8x7b-32768"
+    temperature: float = 0.1
+    max_tokens: int = 4096
+    system_prompt: str = "You are a helpful AI assistant."
+
 class AgentTemplate(BaseModel):
     id: str
     name: str
@@ -51,7 +57,7 @@ class AgentTemplate(BaseModel):
     agent_type: AgentType
     framework: str
     use_cases: List[str]
-    default_config: Dict[str, Any]
+    default_config: AgentDefaultConfig
 
 
 class DeploymentRequest(BaseModel):

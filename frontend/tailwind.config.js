@@ -8,14 +8,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#0A0A0A',
-        accent: '#505050',
-        secondary: '#606060',
-        highlight: '#707070',
-        text: '#E5E5E5',
-        healthy: '#10B981',
-        deploying: '#F59E0B',
-        warning: '#EF4444',
+        primary: '#060606',
+        accent: '#7C3AED',
+        secondary: '#EC4899',
+        highlight: '#FACC15',
+        text: '#E5E7EB',
+        healthy: '#EC4899',
+        deploying: '#7C3AED',
+        warning: '#FACC15',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

@@ -1,3 +1,40 @@
+from fastapi import APIRouter, HTTPException
+from app.schemas import GenerateRequest, GenerateResponse
+from app.services.deployment_service import deployment_service
+import logging
+import uuid
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/generation", tags=["generation"])
+
+
+@router.post("/generate", response_model=GenerateResponse)
+async def generate(req: GenerateRequest):
+    try:
+        result = deployment_service.generate_full_deployment(
+            prompt=req.prompt,
+            agent_type=req.agent_type,
+            cloud_provider=req.cloud_provider,
+            enable_monitoring=req.enable_monitoring,
+            enable_cicd=req.enable_cicd,
+            enable_security_scan=req.enable_security_scan,
+        )
+
+        if result.get("status") == "failed":
+            raise HTTPException(status_code=500, detail=result.get("error", "Generation failed"))
+
+        return GenerateResponse(
+            generation_id=result["generation_id"],
+            status="success",
+            message="Generation completed",
+            files_generated=result.get("files_generated", []),
+            download_url=None,
+        )
+    except Exception as e:
+        logger.error(f"Generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.schemas import GenerateRequest, GenerateResponse
 from app.services.deployment_service import deployment_service

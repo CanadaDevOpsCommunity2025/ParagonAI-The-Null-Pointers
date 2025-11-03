@@ -16,8 +16,9 @@ class Settings(BaseSettings):
     DEFAULT_MODEL: str = "openai/gpt-oss-120b"
     
     # MongoDB Settings
-    MONGODB_URL: str = "mongodb://localhost:27017"
-    MONGODB_DB_NAME: str = "paragon_ai"
+    MONGODB_URL: str = "mongodb://mongodb:27017"
+    MONGODB_DB: str = "paragonai"
+    MONGODB_DB_NAME: Optional[str] = None  # For backward compatibility
     
     # Docker Settings
     DOCKER_REGISTRY: str = "docker.io"
