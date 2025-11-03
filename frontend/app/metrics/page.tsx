@@ -71,7 +71,7 @@ export default function MetricsPage() {
               <YAxis stroke="#666" label={{ value: 'Latency (ms)', angle: -90, position: 'insideLeft', stroke: '#666' }} />
               <Tooltip contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #1F1F1F', color: '#E5E7EB' }} />
               <Legend />
-              <Line type="monotone" dataKey="p50" stroke="#14B8A6" strokeWidth={2} name="P50" />
+              <Line type="monotone" dataKey="p50" stroke="#EC4899" strokeWidth={2} name="P50" />
               <Line type="monotone" dataKey="p95" stroke="#7C3AED" strokeWidth={2} name="P95" />
               <Line type="monotone" dataKey="p99" stroke="#FACC15" strokeWidth={2} name="P99" />
             </LineChart>
@@ -107,7 +107,7 @@ export default function MetricsPage() {
                 <Tooltip contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #1F1F1F', color: '#E5E7EB' }} />
                 <Legend />
                 <Line type="monotone" dataKey="errors" stroke="#FACC15" strokeWidth={2} name="Error %" />
-                <Line type="monotone" dataKey="success" stroke="#14B8A6" strokeWidth={2} name="Success %" />
+                <Line type="monotone" dataKey="success" stroke="#EC4899" strokeWidth={2} name="Success %" />
               </LineChart>
             </ResponsiveContainer>
           </div>

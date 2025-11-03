@@ -50,7 +50,7 @@ npm start
 
 - **Primary**: `#060606` (Black Canvas)
 - **Accent**: `#7C3AED` (Vivid Purple)
-- **Secondary**: `#14B8A6` (Teal)
+- **Secondary**: `#EC4899` (vivid Magenta)
 - **Highlight**: `#FACC15` (Soft Yellow Spark)
 - **Text**: `#E5E7EB` (Soft Gray)
 
