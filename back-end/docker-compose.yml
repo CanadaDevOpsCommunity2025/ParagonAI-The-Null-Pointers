@@ -1,0 +1,53 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=paragonai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - paragonai-network
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27018:27017"  # Use 27018 to avoid conflict with local MongoDB
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - paragonai-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Use 6380 to avoid conflict with local Redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - paragonai-network
+
+volumes:
+  mongodb-data:
+  redis-data:
+
+networks:
+  paragonai-network:
+    driver: bridge
+
