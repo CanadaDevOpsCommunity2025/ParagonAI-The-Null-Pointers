@@ -130,7 +130,7 @@ export default function DashboardPage() {
               <Zap className="w-5 h-5 text-accent" />
             </div>
             <div className="text-3xl font-bold text-text">{responseTime}ms</div>
-            <div className="text-sm text-healthy mt-2">Live mock · click an agent</div>
+            <div className="text-sm text-healthy mt-2">Live Updates? · click an agent</div>
           </div>
 
           <div className="card">
@@ -139,7 +139,7 @@ export default function DashboardPage() {
               <CheckCircle className="w-5 h-5 text-healthy" />
             </div>
             <div className="text-3xl font-bold text-text">{successRate.toFixed(2)}%</div>
-            <div className="text-sm text-healthy mt-2">Live mock · click an agent</div>
+            <div className="text-sm text-healthy mt-2">Live Updates? · click an agent</div>
           </div>
 
           <div className="card">
