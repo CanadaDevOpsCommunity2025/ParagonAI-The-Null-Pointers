@@ -10,10 +10,10 @@ module.exports = {
       colors: {
         primary: '#060606',
         accent: '#7C3AED',
-        secondary: '#14B8A6',
+        secondary: '#EC4899',
         highlight: '#FACC15',
         text: '#E5E7EB',
-        healthy: '#14B8A6',
+        healthy: '#EC4899',
         deploying: '#7C3AED',
         warning: '#FACC15',
       },

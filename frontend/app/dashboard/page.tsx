@@ -172,7 +172,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="time" stroke="#666" />
                   <YAxis stroke="#666" />
                   <Tooltip contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #1F1F1F' }} />
-                  <Area type="monotone" dataKey="memory" stroke="#14B8A6" fill="#14B8A6" fillOpacity={0.2} />
+                  <Area type="monotone" dataKey="memory" stroke="#EC4899" fill="#EC4899" fillOpacity={0.2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
