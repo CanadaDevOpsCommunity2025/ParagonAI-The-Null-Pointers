@@ -1,3 +1,16 @@
+class MonitoringService:
+    def generate_prometheus_config(self, ctx: dict) -> str:
+        return "global:\n  scrape_interval: 15s\n"
+
+    def generate_grafana_config(self, ctx: dict) -> str:
+        return "apiVersion: 1\n"
+
+    def generate_grafana_dashboard(self, ctx: dict) -> str:
+        return "{\n  \"title\": \"Agent Dashboard\"\n}"
+
+
+monitoring_service = MonitoringService()
+
 from typing import Dict, Any
 import logging
 import json

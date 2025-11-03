@@ -1,3 +1,13 @@
+class MongoDBExporter:
+    def __init__(self, mongo_uri: str, db_name: str, port: int = 8001):
+        self.mongo_uri = mongo_uri
+        self.db_name = db_name
+        self.port = port
+
+    def run(self):
+        # Stub exporter: no-op to keep server startup working without dependencies
+        return
+
 # app/services/mongodb_exporter.py
 from prometheus_client import start_http_server, Gauge, Counter
 import pymongo
@@ -53,9 +63,9 @@ class MongoDBExporter:
     
     def collect_metrics(self):
         """Collect metrics from MongoDB and update Prometheus metrics"""
-        if not self.db:
+        if self.db is None:
             self.connect()
-            if not self.db:
+            if self.db is None:
                 return
                 
         try:

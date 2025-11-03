@@ -1,3 +1,25 @@
+class KubernetesService:
+    def create_namespace(self, namespace: str) -> bool:
+        return True
+
+    def apply_manifest(self, path: str) -> bool:
+        return True
+
+    def get_deployment_status(self, app_name: str, namespace: str):
+        return {"ready": True, "replicas": 1}
+
+    def get_service_endpoint(self, service_name: str, namespace: str) -> str:
+        return f"http://localhost:8000"
+
+    def delete_resource(self, kind: str, name: str, namespace: str) -> bool:
+        return True
+
+    def rollback_deployment(self, app_name: str, namespace: str, revision: int | None) -> bool:
+        return True
+
+
+kubernetes_service = KubernetesService()
+
 import subprocess
 import yaml
 from pathlib import Path

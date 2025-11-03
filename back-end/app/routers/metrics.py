@@ -1,3 +1,26 @@
+from fastapi import APIRouter
+from datetime import datetime
+from app.schemas import MetricsResponse
+
+router = APIRouter(prefix="/metrics", tags=["metrics"])
+
+@router.get("/")
+async def test():
+    return "Hello Theere"
+
+
+@router.get("/{deployment_id}", response_model=MetricsResponse)
+async def get_metrics(deployment_id: str):
+    # Minimal mock implementation to keep API working
+    return MetricsResponse(
+        deployment_id=deployment_id,
+        request_count=100,
+        error_count=2,
+        avg_response_time=0.35,
+        uptime_percentage=99.5,
+        last_updated=datetime.utcnow(),
+    )
+
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
 from typing import List, Optional

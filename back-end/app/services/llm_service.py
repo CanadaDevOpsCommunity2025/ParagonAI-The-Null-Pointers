@@ -1,3 +1,26 @@
+class LLMService:
+    def parse_deployment_prompt(self, prompt: str):
+        # Minimal heuristic parser
+        agent_type = "customer_support" if "support" in prompt.lower() else (
+            "content_writer" if "content" in prompt.lower() else "data_analyst"
+        )
+        return {
+            "agent_type": agent_type,
+            "scale_requirements": {"replicas": 1},
+        }
+
+    def generate_agent_code(self, agent_type: str, requirements: dict) -> str:
+        return (
+            "from fastapi import FastAPI\n"
+            "app = FastAPI()\n\n"
+            "@app.get('/health')\n"
+            "def health():\n"
+            "    return {'status': 'ok', 'agent_type': '" + agent_type + "'}\n"
+        )
+
+
+llm_service = LLMService()
+
 from openai import OpenAI
 from app.config import settings
 from typing import Dict, Any
