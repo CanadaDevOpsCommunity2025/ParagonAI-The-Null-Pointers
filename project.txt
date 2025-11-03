@@ -1,0 +1,96 @@
+Customer Support Triage Demo
+This project demonstrates using multiple GenAI agents to automate the triage of customer support tickets. The system is built with a CLI that deploys, manages, and exposes each agent as an independent API endpoint.
+
+🧩 Project Overview
+Goal:
+Automatically summarize, analyze sentiment, and route support tickets to the appropriate queue using GenAI agents hosted as microservices/APIs.
+
+Frontend:
+A simple dashboard that allows you to upload/view tickets, shows pipeline stages for each ticket, the output at each agent stage, and route/escalation status.
+
+Backend Agents:
+
+/summarize: Ticket Summarizer Agent
+Summarizes raw customer messages for conciseness and clarity.
+
+/sentiment: Sentiment Analyzer Agent
+Detects urgency, anger, or negative sentiment in tickets.
+
+/route: Priority Router Agent
+Decides whether a ticket needs escalation to human support based on summary and sentiment.
+
+🖼️ System Architecture
+text
+User Uploads Ticket (Raw Text) ➔
+  [API /summarize] ➔ Summarized Issue ➔
+  [API /sentiment] ➔ Sentiment Label ➔
+  [API /route] ➔ Routing Decision (e.g., escalate, normal queue)
+Frontend displays all Outputs + Pipeline Progress
+🖥️ Frontend Features
+Upload Form: Add new ticket (raw text).
+
+Ticket List Table: Shows all tickets, original message, summary, sentiment, route.
+
+Pipeline Visualization: Shows which step each ticket is at.
+
+Agent Attribution: For each ticket/column, display which agent endpoint generated the result.
+
+Escalation Highlight: Tickets flagged for escalation are highlighted.
+
+Error/Feedback Display: Show API status, latency, errors, and logs per agent.
+
+🧑‍💻 Example Usage and API Calls
+typescript
+// 1. Summarization
+POST /summarize
+Body: { "text": "I can't log in and your password reset isn't working. Help!" }
+→ Response: { "summary": "Customer unable to log in, password reset failed" }
+
+// 2. Sentiment
+POST /sentiment
+Body: { "summary": "Customer unable to log in, password reset failed" }
+→ Response: { "sentiment": "frustrated", "urgency": "high" }
+
+// 3. Routing
+POST /route
+Body: { "summary": "...", "sentiment": "...", "urgency": "..." }
+→ Response: { "action": "escalate_to_human" }
+📊 Example Dataset
+json
+[
+  {
+    "id": 1,
+    "text": "I tried to pay my bill online but your site kept giving error 500, and the chatbot was no help at all.",
+    "expected_summary": "Customer unable to pay bill online, website error 500, chatbot unhelpful.",
+    "expected_sentiment": "frustrated",
+    "expected_urgency": "high"
+  },
+  {
+    "id": 2,
+    "text": "Just wanted to let you know the delivery was late but it arrived safely. Thanks.",
+    "expected_summary": "Delivery was late but item arrived safely.",
+    "expected_sentiment": "neutral",
+    "expected_urgency": "low"
+  },
+  {
+    "id": 3,
+    "text": "Reset my password 3 times, still can't get access. Please fix this ASAP or I'll move to another provider!",
+    "expected_summary": "Password reset failed multiple times, customer threatens to leave.",
+    "expected_sentiment": "angry",
+    "expected_urgency": "critical"
+  }
+]
+🚦 Mapping: Endpoint Responsibility
+Pipeline Step	Agent Endpoint	What it Does
+Summarize Ticket	/summarize	Accepts raw ticket, returns concise summary
+Analyze Sentiment/Urgency	/sentiment	Accepts summary, returns sentiment/urgency label
+Route Ticket (Escalate?)	/route	Accepts summary+sentiment+urgency, returns action
+🚀 How to Run
+Use paragon create to make each agent (summarize, sentiment, route).
+
+Use paragon deploy to launch them on your cluster.
+
+Start the frontend dashboard and point to the deployed API endpoints.
+
+Upload tickets, and watch as the pipeline triages and routes in real-time!
+
