@@ -1,6 +1,1 @@
-CLAUDE.md
-.claude/
-.specify/
-specs
-.venv
-.DS_Store
+.env
