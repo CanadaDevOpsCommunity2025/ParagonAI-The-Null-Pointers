@@ -13,7 +13,7 @@ AGENT_TEMPLATES = [
     {
         "id": "customer-support-v1",
         "name": "Customer Support Agent",
-        "description": "AI agent for handling customer inquiries, FAQs, and support tickets using LangChain",
+        "description": "AI agent for handling customer inquiries, FAQs, and support tickets using LangChain with Groq's Mixtral model",
         "agent_type": AgentType.CUSTOMER_SUPPORT,
         "framework": "LangChain",
         "use_cases": [
@@ -23,15 +23,15 @@ AGENT_TEMPLATES = [
             "Route complex issues to human agents"
         ],
         "default_config": {
-            "model": "gpt-4",
-            "temperature": 0.7,
-            "max_tokens": 500
+            "model": "mixtral-8x7b-32768",
+            "temperature": 0.1,
+            "max_tokens": 4096
         }
     },
     {
         "id": "content-writer-v1",
         "name": "Content Writer Agent",
-        "description": "AI agent for generating blog posts, articles, and marketing content using CrewAI",
+        "description": "AI agent for generating blog posts, articles, and marketing content using CrewAI with Groq's Mixtral model",
         "agent_type": AgentType.CONTENT_WRITER,
         "framework": "CrewAI",
         "use_cases": [
@@ -41,15 +41,15 @@ AGENT_TEMPLATES = [
             "Draft marketing copy"
         ],
         "default_config": {
-            "model": "gpt-4",
-            "temperature": 0.8,
-            "max_tokens": 2000
+            "model": "mixtral-8x7b-32768",
+            "temperature": 0.1,
+            "max_tokens": 4096
         }
     },
     {
         "id": "data-analyst-v1",
         "name": "Data Analyst Agent",
-        "description": "AI agent for analyzing datasets and generating insights using AutoGen",
+        "description": "AI agent for analyzing datasets and generating insights using AutoGen with Groq's Mixtral model",
         "agent_type": AgentType.DATA_ANALYST,
         "framework": "AutoGen",
         "use_cases": [
@@ -59,9 +59,9 @@ AGENT_TEMPLATES = [
             "Identify trends and patterns"
         ],
         "default_config": {
-            "model": "gpt-4",
-            "temperature": 0.3,
-            "max_tokens": 1500
+            "model": "mixtral-8x7b-32768",
+            "temperature": 0.1,
+            "max_tokens": 4096
         }
     }
 ]

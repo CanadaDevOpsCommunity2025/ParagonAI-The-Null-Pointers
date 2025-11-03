@@ -37,6 +37,9 @@ pytest-asyncio==0.24.0
 tenacity==9.1.2
 typing_extensions==4.15.0
 
+# Prometheus
+prometheus-client==0.20.0
+
 # Others
 annotated-doc==0.0.3
 annotated-types==0.7.0
