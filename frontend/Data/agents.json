@@ -1,0 +1,70 @@
+{
+	"agents": [
+		{
+			"id": 1,
+			"name": "Code Assistant",
+			"version": "2.1.0",
+			"status": "healthy",
+			"uptime": "12d 4h 32m",
+			"endpoint": "https://api-agent.example.com",
+			"region": "us-east-1",
+			"replicas": 3,
+			"cpu": "45%",
+			"memory": "2.1 GB",
+            "type": "Auto Correct RAG Agent",
+            "language": "Python",
+            "created": "2024-01-15",
+            "size": "100 MB",
+            "agent": "gpt-4",
+            "deployed": "testing"
+		},
+		{
+			"id": 2,
+			"name": "Summarizer",
+			"version": "1.3.5",
+			"status": "healthy",
+			"uptime": "5d 8h 15m",
+			"endpoint": "https://chatbot.example.com",
+			"region": "us-west-2",
+			"replicas": 2,
+			"cpu": "32%",
+			"memory": "1.8 GB"
+		},
+		{
+			"id": 3,
+			"name": "Data Analyzer",
+			"version": "3.0.2",
+			"status": "deploying",
+			"uptime": "2h 15m",
+			"endpoint": "https://data-processor.example.com",
+			"region": "eu-central-1",
+			"replicas": 1,
+			"cpu": "67%",
+			"memory": "3.2 GB"
+		},
+		{
+			"id": 4,
+			"name": "Custom Agent-1",
+			"version": "1.0.0",
+			"status": "warning",
+			"uptime": "1d 2h 8m",
+			"endpoint": "https://legacy.example.com",
+			"region": "us-east-1",
+			"replicas": 1,
+			"cpu": "89%",
+			"memory": "4.5 GB"
+		},
+		{
+			"id": 5,
+			"name": "Custom Agent-2",
+			"version": "1.0.0",
+			"status": "warning",
+			"uptime": "1d 2h 8m",
+			"endpoint": "https://legacy.example.com",
+			"region": "us-east-1",
+			"replicas": 1,
+			"cpu": "89%",
+			"memory": "4.5 GB"
+		}
+	]
+}

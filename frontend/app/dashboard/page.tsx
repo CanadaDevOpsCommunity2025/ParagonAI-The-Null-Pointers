@@ -1,20 +1,37 @@
-'use client'
+"use client"
 
 import { Activity, Cpu, HardDrive, Zap, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import agentsData from '@/Data/do-agents.json'
+import { useEffect, useState } from 'react'
 
-const mockDeployments = [
-  { id: 1, name: 'API Agent v2.1', version: '2.1.0', uptime: '12d 4h', status: 'healthy' },
-  { id: 2, name: 'Chat Bot Agent', version: '1.3.5', uptime: '5d 8h', status: 'healthy' },
-  { id: 3, name: 'Data Processor', version: '3.0.2', uptime: '2h 15m', status: 'deploying' },
-  { id: 4, name: 'Legacy Agent', version: '1.0.0', uptime: '1d 2h', status: 'warning' },
-]
+const shouldInclude = (a: any) => {
+  if (!a?.endpoint) return false
+  if (a?.name === 'Do Node') return false
+  const model = (typeof a?.agent === 'string' && a.agent) || (typeof a?.model === 'string' && a.model) || ''
+  if (model.trim() === '') return false
+  return true
+}
 
+const initialAgents = ((agentsData as any).agents as any[]).filter((a) => shouldInclude(a))
+const initialDeployments = initialAgents.map((a: any) => ({
+  id: a.id,
+  name: a.name,
+  version: a.version,
+  uptime: a.uptime ?? '—',
+  status: a.status,
+}))
+
+const agentsList = (agentsData as any).agents as any[]
+const a1 = agentsList[0]
+const a2 = agentsList[1]
+const a3 = agentsList[2]
+const warn = agentsList.find(a => a.status === 'warning')
 const mockActivity = [
-  { id: 1, type: 'build', message: 'API Agent v2.1 built successfully', timestamp: '2 minutes ago' },
-  { id: 2, type: 'deploy', message: 'Chat Bot Agent deployed to production', timestamp: '15 minutes ago' },
-  { id: 3, type: 'push', message: 'Data Processor pushed to registry', timestamp: '1 hour ago' },
-  { id: 4, type: 'error', message: 'Legacy Agent warning: high memory usage', timestamp: '2 hours ago' },
+  { id: 1, type: 'build',  message: `${a1?.name ?? 'Agent'} built successfully`, timestamp: '2 minutes ago' },
+  { id: 2, type: 'deploy', message: `${a2?.name ?? 'Agent'} deployed to production`, timestamp: '15 minutes ago' },
+  { id: 3, type: 'push',   message: `${a3?.name ?? 'Agent'} pushed to registry`, timestamp: '1 hour ago' },
+  { id: 4, type: 'error',  message: `${warn?.name ?? 'Agent'} warning: high memory usage`, timestamp: '2 hours ago' },
 ]
 
 const mockMetrics = [
@@ -40,6 +57,66 @@ const getStatusIcon = (status: string) => {
 }
 
 export default function DashboardPage() {
+  const [active, setActive] = useState<any[]>(initialDeployments)
+  // Mocked, click-driven stats state
+  const [responseTime, setResponseTime] = useState<number>(112)
+  const [successRate, setSuccessRate] = useState<number>(99.8)
+  const [totalRequests, setTotalRequests] = useState<number>(12400)
+  const [activity, setActivity] = useState<any[]>(mockActivity)
+  const [metrics, setMetrics] = useState<any[]>(mockMetrics)
+
+  const rand = (min: number, max: number) => Math.random() * (max - min) + min
+  const randInt = (min: number, max: number) => Math.floor(rand(min, max))
+
+  const randomizeMetrics = () => {
+    const times = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+    const gen = times.map((t) => ({
+      time: t,
+      latency: Math.round(rand(80, 220)),
+      cpu: Math.round(rand(25, 90)),
+      memory: Math.round(rand(35, 90)),
+    }))
+    setMetrics(gen)
+  }
+
+  const onAgentClick = (agent: any) => {
+    // Randomize KPI cards
+    setResponseTime(Math.round(rand(70, 210)))
+    setSuccessRate(parseFloat(rand(95, 99.95).toFixed(2)))
+    // Increment/decrement requests a bit to simulate traffic
+    const delta = randInt(-1200, 2200)
+    setTotalRequests((prev) => Math.max(0, prev + delta))
+    // Add a fresh recent activity entry to the top
+    const variants = ['handled', 'processed', 'served', 'completed']
+    const action = variants[randInt(0, variants.length)]
+    const reqCount = Math.max(1, randInt(50, 800))
+    const newEvent = {
+      id: Date.now(),
+      type: delta < 0 ? 'error' : 'deploy',
+      message: `${agent.name} ${action} ${reqCount.toLocaleString()} requests`,
+      timestamp: 'just now',
+    }
+    setActivity((prev) => [newEvent, ...prev].slice(0, 12))
+    // Update the utilization charts
+    randomizeMetrics()
+  }
+
+  useEffect(() => {
+    const es = new EventSource('/api/agents/stream')
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data)
+        const list = (data?.agents || [])
+          .filter((a: any) => shouldInclude(a))
+          .map((a: any) => ({ id: a.id, name: a.name, version: a.version, uptime: a.uptime ?? '—', status: a.status }))
+        setActive(list)
+      } catch (e) {
+        console.error('SSE parse error', e)
+      }
+    }
+    es.onerror = () => es.close()
+    return () => es.close()
+  }, [])
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -52,8 +129,8 @@ export default function DashboardPage() {
               <span className="text-text/70 text-sm uppercase tracking-tight">Response Time</span>
               <Zap className="w-5 h-5 text-accent" />
             </div>
-            <div className="text-3xl font-bold text-text">112ms</div>
-            <div className="text-sm text-healthy mt-2">↓ 12% from last hour</div>
+            <div className="text-3xl font-bold text-text">{responseTime}ms</div>
+            <div className="text-sm text-healthy mt-2">Live mock · click an agent</div>
           </div>
 
           <div className="card">
@@ -61,8 +138,8 @@ export default function DashboardPage() {
               <span className="text-text/70 text-sm uppercase tracking-tight">Success Rate</span>
               <CheckCircle className="w-5 h-5 text-healthy" />
             </div>
-            <div className="text-3xl font-bold text-text">99.8%</div>
-            <div className="text-sm text-healthy mt-2">↑ 0.2% from last hour</div>
+            <div className="text-3xl font-bold text-text">{successRate.toFixed(2)}%</div>
+            <div className="text-sm text-healthy mt-2">Live mock · click an agent</div>
           </div>
 
           <div className="card">
@@ -70,8 +147,8 @@ export default function DashboardPage() {
               <span className="text-text/70 text-sm uppercase tracking-tight">Total Requests</span>
               <Activity className="w-5 h-5 text-secondary" />
             </div>
-            <div className="text-3xl font-bold text-text">12.4K</div>
-            <div className="text-sm text-secondary mt-2">Last 24 hours</div>
+            <div className="text-3xl font-bold text-text">{Intl.NumberFormat('en', { notation: 'compact' }).format(totalRequests)}</div>
+            <div className="text-sm text-secondary mt-2">Last 24 hours · mock</div>
           </div>
 
           <div className="card">
@@ -79,7 +156,7 @@ export default function DashboardPage() {
               <span className="text-text/70 text-sm uppercase tracking-tight">Active Agents</span>
               <Activity className="w-5 h-5 text-highlight" />
             </div>
-            <div className="text-3xl font-bold text-text">{mockDeployments.length}</div>
+            <div className="text-3xl font-bold text-text">{active.length}</div>
             <div className="text-sm text-text/70 mt-2">Currently running</div>
           </div>
         </div>
@@ -89,10 +166,11 @@ export default function DashboardPage() {
           <div className="card">
             <h2 className="text-2xl font-heading font-bold mb-6">Active Deployments</h2>
             <div className="space-y-4">
-              {mockDeployments.map((deployment) => (
+              {active.map((deployment: any) => (
                 <div
                   key={deployment.id}
-                  className="bg-[#060606] border border-[#1F1F1F] rounded-lg p-4 hover:border-accent/50 transition-colors"
+                  className="bg-[#060606] border border-[#1F1F1F] rounded-lg p-4 hover:border-accent/50 transition-colors cursor-pointer"
+                  onClick={() => onAgentClick(deployment)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -120,7 +198,7 @@ export default function DashboardPage() {
           <div className="card">
             <h2 className="text-2xl font-heading font-bold mb-6">Recent Activity</h2>
             <div className="space-y-4">
-              {mockActivity.map((activity) => (
+              {activity.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex items-start space-x-3 pb-4 border-b border-[#1F1F1F] last:border-0"
@@ -151,7 +229,7 @@ export default function DashboardPage() {
                 <h3 className="font-semibold">CPU Usage</h3>
               </div>
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={mockMetrics}>
+                <AreaChart data={metrics}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" />
                   <XAxis dataKey="time" stroke="#666" />
                   <YAxis stroke="#666" />
@@ -167,7 +245,7 @@ export default function DashboardPage() {
                 <h3 className="font-semibold">Memory Usage</h3>
               </div>
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={mockMetrics}>
+                <AreaChart data={metrics}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" />
                   <XAxis dataKey="time" stroke="#666" />
                   <YAxis stroke="#666" />
@@ -183,7 +261,7 @@ export default function DashboardPage() {
                 <h3 className="font-semibold">Latency</h3>
               </div>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={mockMetrics}>
+                <LineChart data={metrics}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" />
                   <XAxis dataKey="time" stroke="#666" />
                   <YAxis stroke="#666" />

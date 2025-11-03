@@ -1,0 +1,44 @@
+{
+	"agents": [
+		{
+			"id": 1,
+			"name": "Content Writer Agent",
+			"version": "1.0.0",
+			"status": "healthy",
+			"age": "1h 23m",
+			"uptime": "1h 23m",
+			"endpoint": "http://10.108.0.165",
+			"region": "tor1",
+			"replicas": 1,
+			"cpu": "200m",
+			"memory": "256Mi",
+			"type": "content-writer",
+			"language": "Python",
+			"created": "2025-11-03",
+			"size": "N/A",
+			"agent": "mixtral-8x7b-32768",
+			"deployed": "testing",
+			"node": "paragon-ai-pvt3o"
+		},
+		{
+			"id": 2,
+			"name": "Customer Support Agent",
+			"version": "1.0.0",
+			"status": "healthy",
+			"age": "1h 23m",
+			"uptime": "1h 23m",
+			"endpoint": "http://10.108.0.200",
+			"region": "tor1",
+			"replicas": 1,
+			"cpu": "200m",
+			"memory": "256Mi",
+			"type": "customer-support",
+			"language": "Python",
+			"created": "2025-11-03",
+			"size": "N/A",
+			"agent": "mixtral-8x7b-32768",
+			"deployed": "testing",
+			"node": "paragon-ai-pvt3o"
+		}
+	]
+}

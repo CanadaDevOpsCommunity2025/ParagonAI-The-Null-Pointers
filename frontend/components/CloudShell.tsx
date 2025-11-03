@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Copy, Check } from 'lucide-react'
+import agentsData from '@/Data/agents.json'
 
 interface CommandOutput {
   id: string
@@ -64,14 +65,18 @@ const mockCommands: { [key: string]: (args: string[]) => string } = {
   },
 
   'paragon status': () => {
+    const agents = (agentsData as any).agents.filter((a: any) => a.status)
+    const count = agents.length
+    const list = agents
+      .slice(0, 10) // keep output concise
+      .map((a: any) => `  - ${a.name.replace(/\s+/g, '-').toLowerCase()} (${a.status === 'healthy' ? 'running' : a.status})`)
+      .join('\n')
     return `ParagonAI CLI Status:
 ✓ Connected to ParagonAI Cloud
 ✓ Authenticated as: user@example.com
 ✓ Workspace: /home/paragon
-✓ Active agents: 3
-  - api-agent (running)
-  - chat-bot (running)
-  - data-processor (deploying)`
+✓ Active agents: ${count}
+${list}`
   },
 
   'help': () => {

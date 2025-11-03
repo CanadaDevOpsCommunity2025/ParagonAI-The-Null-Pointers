@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
     "lucide-react": "^0.294.0",
     "motion": "^12.23.24",
     "next": "^14.0.0",

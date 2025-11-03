@@ -2,6 +2,7 @@
 
 import { Download, TrendingUp, AlertTriangle, Clock } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import agentsData from '@/Data/agents.json'
 
 const latencyData = [
   { date: 'Mon', p50: 95, p95: 150, p99: 200 },
@@ -32,19 +33,13 @@ const errorRateData = [
   { date: 'Sun', errors: 0.12, success: 99.88 },
 ]
 
-const deployments = [
-  { id: 1, agent: 'API Agent v2.1', version: '2.1.0', deployed: '2024-01-15 10:30', status: 'healthy' },
-  { id: 2, agent: 'Chat Bot Agent', version: '1.3.5', deployed: '2024-01-12 14:20', status: 'healthy' },
-  { id: 3, agent: 'Data Processor', version: '3.0.2', deployed: '2024-01-18 09:15', status: 'healthy' },
-  { id: 4, agent: 'Legacy Agent', version: '1.0.0', deployed: '2024-01-10 16:45', status: 'warning' },
-]
+const deployments = (agentsData as any).agents
+  .filter((a: any) => a.deployed)
+  .map((a: any) => ({ id: a.id, agent: a.name, version: a.version, deployed: a.deployed, status: a.status || 'healthy' }))
 
-const generatedAgents = [
-  { id: 1, name: 'API Agent', type: 'REST API', language: 'Python', created: '2024-01-15', size: '2.3 MB' },
-  { id: 2, name: 'Chat Bot Agent', type: 'Conversational', language: 'Python', created: '2024-01-12', size: '4.1 MB' },
-  { id: 3, name: 'Data Processor', type: 'Data Pipeline', language: 'Python', created: '2024-01-18', size: '3.7 MB' },
-  { id: 4, name: 'Image Analyzer', type: 'Computer Vision', language: 'Python', created: '2024-01-14', size: '5.2 MB' },
-]
+const generatedAgents = (agentsData as any).agents
+  .filter((a: any) => a.type && a.language && a.created && a.size)
+  .map((a: any) => ({ id: a.id, name: a.name, type: a.type, language: a.language, created: a.created, size: a.size }))
 
 export default function MetricsPage() {
   return (
@@ -120,7 +115,7 @@ export default function MetricsPage() {
             <span>Deployment Timeline</span>
           </h2>
           <div className="space-y-4">
-            {deployments.map((deployment, index) => (
+            {deployments.map((deployment: any, index: number) => (
               <div key={deployment.id} className="flex items-center space-x-4">
                 <div className="flex flex-col items-center">
                   <div className={`w-4 h-4 rounded-full ${
@@ -170,7 +165,7 @@ export default function MetricsPage() {
                 </tr>
               </thead>
               <tbody>
-                {generatedAgents.map((agent) => (
+                {generatedAgents.map((agent: any) => (
                   <tr key={agent.id} className="border-b border-[#1F1F1F] hover:bg-[#0A0A0A] transition-colors">
                     <td className="py-3 px-4 font-semibold">{agent.name}</td>
                     <td className="py-3 px-4 text-text/70">{agent.type}</td>
