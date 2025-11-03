@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-primary text-text;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-white px-6 py-3 rounded-lg font-semibold 
+           transition-all duration-300 hover:shadow-neon-purple 
+           hover:scale-105 active:scale-95 uppercase tracking-tight;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-lg font-semibold 
+           transition-all duration-300 hover:shadow-neon-teal 
+           hover:scale-105 active:scale-95 uppercase tracking-tight;
+  }
+
+  .card {
+    @apply bg-[#0F0F0F] border border-[#1F1F1F] rounded-lg p-6 
+           transition-all duration-300 hover:border-accent/50;
+  }
+
+  .status-healthy {
+    @apply text-healthy;
+  }
+
+  .status-deploying {
+    @apply text-deploying;
+  }
+
+  .status-warning {
+    @apply text-warning;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent;
+  }
+
+  .neon-glow-purple {
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.5), 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .neon-glow-teal {
+    box-shadow: 0 0 10px rgba(20, 184, 166, 0.5), 0 0 20px rgba(20, 184, 166, 0.3);
+  }
+}
+
